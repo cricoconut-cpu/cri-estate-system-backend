@@ -6,9 +6,7 @@ const connectDB = async () => {
       throw new Error("MONGODB_URI is not set");
     }
 
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: process.env.MONGODB_DB_NAME || "CRIdb",
-    });
+    const conn = await mongoose.connect(process.env.MONGODB_URI);
 
     console.log(
       `MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`
