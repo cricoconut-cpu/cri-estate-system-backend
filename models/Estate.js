@@ -2,11 +2,12 @@ import mongoose from "mongoose";
 
 const estateSchema = new mongoose.Schema(
   {
-    code: {
+    estateCode: {
       type: String,
       required: true,
       unique: true,
       trim: true,
+      uppercase: true,
     },
 
     name: {
@@ -21,16 +22,10 @@ const estateSchema = new mongoose.Schema(
       trim: true,
     },
 
-    sector: {
+    area: {
       type: String,
       required: true,
       trim: true,
-    },
-
-    area: {
-      type: Number,
-      required: true,
-      min: 0,
     },
 
     established: {
@@ -38,37 +33,30 @@ const estateSchema = new mongoose.Schema(
       required: true,
     },
 
+    // Option B (Final Decision)
     manager: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    totalTrees: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-
-    latitude: {
-      type: Number,
-      required: true,
-    },
-
-    longitude: {
-      type: Number,
-      required: true,
-    },
-
+    // Static estate photo (Supabase URL)
     coverImage: {
       type: String,
       default: null,
     },
 
-    status: {
-      type: String,
-      enum: ["active", "inactive"],
-      default: "active",
+    // Updated automatically after every survey
+    totalTrees: {
+      type: Number,
+      default: null,
+      min: 0,
+    },
+
+    // Updated automatically after every survey
+    lastSurvey: {
+      type: Date,
+      default: null,
     },
   },
   {
@@ -76,6 +64,4 @@ const estateSchema = new mongoose.Schema(
   }
 );
 
-const Estate = mongoose.model("Estate", estateSchema);
-
-export default Estate;
+export default mongoose.model("Estate", estateSchema);
