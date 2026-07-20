@@ -31,6 +31,7 @@ const estateSchema = new mongoose.Schema(
     established: {
       type: Number,
       required: true,
+      min: 1800,
     },
 
     // Option B (Final Decision)
@@ -40,23 +41,21 @@ const estateSchema = new mongoose.Schema(
       required: true,
     },
 
-    // Static estate photo (Supabase URL)
+    phoneNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
     coverImage: {
       type: String,
       default: null,
     },
 
-    // Updated automatically after every survey
-    totalTrees: {
-      type: Number,
-      default: null,
-      min: 0,
-    },
-
-    // Updated automatically after every survey
-    lastSurvey: {
-      type: Date,
-      default: null,
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
     },
   },
   {
@@ -64,4 +63,6 @@ const estateSchema = new mongoose.Schema(
   }
 );
 
-export default mongoose.model("Estate", estateSchema);
+const Estate = mongoose.model("Estate", estateSchema);
+
+export default Estate;
