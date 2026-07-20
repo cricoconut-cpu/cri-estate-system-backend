@@ -6,6 +6,7 @@
   "scripts": {
     "start": "nodemon app.js",
     "seed:users": "node seed/user.seed.js",
+    "seed:estate": "node seed/estate.seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
