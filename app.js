@@ -1,8 +1,14 @@
-const express = require("express");
-const cors = require("cors");
-const dotenv = require("dotenv");
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
 
-const connectDB = require("./config/database");
+import connectDB from "./config/database.js";
+import errorHandler from "./middleware/error.middleware.js";
+
+// Routes
+import authRoutes from "./routes/auth.routes.js";
+import estateRoutes from "./routes/estate.routes.js";
+// import surveyRoutes from "./routes/survey.routes.js";
 
 dotenv.config();
 connectDB();
@@ -12,10 +18,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const authRoutes = require("./routes/auth.routes");
-const estateRoutes = require("./routes/estate.routes");
-const surveyRoutes = require("./routes/survey.routes");
-
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -23,11 +25,12 @@ app.get("/", (req, res) => {
   });
 });
 
+// Register Routes
 app.use("/api/auth", authRoutes);
-// app.use("/api/estates", estateRoutes);
+app.use("/api/estates", estateRoutes);
 // app.use("/api/surveys", surveyRoutes);
 
-const errorHandler = require("./middleware/error.middleware");
+// Error Handling Middleware (must be after routes)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
