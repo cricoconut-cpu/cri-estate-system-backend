@@ -1,37 +1,48 @@
-require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
+import dotenv from "dotenv";
+import connectDB from "../config/database.js";
+import User from "../models/User.js";
 
-const mongoose = require("mongoose");
-
-const User = require("../models/User");
-
-const connectDB = require("../config/database");
+dotenv.config();
 
 const seedUsers = async () => {
   try {
     await connectDB();
 
+    // Clear existing users to prevent duplicates during testing
     await User.deleteMany();
 
-    await User.create({
-      name: "System Admin",
-      email: "admin@cri.lk",
-      password: "Admin123",
-      role: "Admin",
-    });
+    // Create all required users
+    await User.create([
+      {
+        name: "System Admin",
+        email: "admin@cri.lk",
+        password: "Admin123",
+        role: "Admin",
+      },
+      {
+        name: "System Analyst",
+        email: "analyst@cri.lk",
+        password: "Analyst123",
+        role: "Analyst",
+      },
+      {
+        name: "Ratmalagara Manager",
+        email: "ratmalagara.manager@cri.lk",
+        password: "Manager123",
+        role: "Estate Manager", 
+      },
+      {
+        name: "Bandirippuwa Manager",
+        email: "bandirippuwa.manager@cri.lk",
+        password: "Manager123",
+        role: "Estate Manager",
+      }
+    ]);
 
-    await User.create({
-      name: "System Analyst",
-      email: "analyst@cri.lk",
-      password: "Analyst123",
-      role: "Analyst",
-    });
-
-    console.log("Users Seeded");
-
-    process.exit();
+    console.log("Users Seeded Successfully");
+    process.exit(0);
   } catch (error) {
-    console.error(error);
-
+    console.error("Failed to seed users:", error);
     process.exit(1);
   }
 };
