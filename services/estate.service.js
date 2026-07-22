@@ -1,18 +1,23 @@
 import Estate from "../models/Estate.js";
+import { estateResponseDto } from "../utils/estate.dto.js";
 
 export const getAllEstates = async (user) => {
   // Admin and Analyst can view all estates
   if (user.role === "Admin" || user.role === "Analyst") {
-    return await Estate.find()
+    const estates = await Estate.find()
       .populate("manager", "name email")
       .sort({ name: 1 });
+      
+    return estates.map(estateResponseDto);
   }
 
   // Estate Manager can only view their assigned estate
   if (user.role === "Estate Manager") {
-    return await Estate.find({
+    const estates = await Estate.find({
       _id: user.assignedEstate,
     }).populate("manager", "name email");
+    
+    return estates.map(estateResponseDto);
   }
 
   throw new Error("Unauthorized access.");
@@ -30,7 +35,7 @@ export const getEstateById = async (estateId, user) => {
 
   // Admin and Analyst can access any estate
   if (user.role === "Admin" || user.role === "Analyst") {
-    return estate;
+    return estateResponseDto(estate);
   }
 
   // Estate Manager can only access their own estate
@@ -38,7 +43,7 @@ export const getEstateById = async (estateId, user) => {
     user.role === "Estate Manager" &&
     user.assignedEstate?.toString() === estate._id.toString()
   ) {
-    return estate;
+    return estateResponseDto(estate);
   }
 
   throw new Error("You are not authorized to access this estate.");
