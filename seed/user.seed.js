@@ -8,10 +8,9 @@ const seedUsers = async () => {
   try {
     await connectDB();
 
-    // Clear existing users to prevent duplicates during testing
+    // Clear existing users
     await User.deleteMany();
 
-    // Create all required users
     await User.create([
       {
         name: "System Admin",
@@ -29,17 +28,17 @@ const seedUsers = async () => {
         name: "Ratmalagara Manager",
         email: "ratmalagara.manager@cri.lk",
         password: "Manager123",
-        role: "Estate Manager", 
+        role: "Estate Manager",
       },
       {
         name: "Bandirippuwa Manager",
         email: "bandirippuwa.manager@cri.lk",
         password: "Manager123",
         role: "Estate Manager",
-      }
+      },
     ]);
 
-    console.log("Users Seeded Successfully");
+    console.log("Users seeded successfully.");
     process.exit(0);
   } catch (error) {
     console.error("Failed to seed users:", error);
