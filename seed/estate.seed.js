@@ -7,32 +7,126 @@ dotenv.config();
 
 const estates = [
   {
-    estateCode: "RATM",
-    name: "Ratmalagara Estate",
-    district: "Kurunegala",
-    area: "487 ha",
-    established: 1942,
-
-    // Used only during seeding
-    managerEmail: "ratmalagara.manager@cri.lk",
-
-    phoneNumber: "+94 37 2234567",
+    estateCode: "1",
+    name: "Bandirippuwa Research Center",
+    district: "Puttalam",
+    area: "145.75 ha",
+    established: 1929,
+    managerEmail: "cri.bandirippuwaestate@gmail.com",
+    phoneNumber: "031-2257419",
     coverImage: null,
-    status: "active",
+    status: "active"
   },
   {
-    estateCode: "BAND",
-    name: "Bandirippuwa Estate",
-    district: "Puttalam",
-    area: "320 ha",
-    established: 1955,
-
-    managerEmail: "bandirippuwa.manager@cri.lk",
-
-    phoneNumber: "+94 32 2256789",
+    estateCode: "2",
+    name: "Rathmaragara Research Center",
+    district: "Kurunegala",
+    area: "101.62 ha",
+    established: 1926,
+    managerEmail: "crirathmalagara@gmail.com",
+    phoneNumber: "032-2240084",
     coverImage: null,
-    status: "active",
+    status: "active"
   },
+  {
+    estateCode: "3",
+    name: "Ambakale Genetic Resources Center",
+    district: "Puttalam",
+    area: "475.83 ha",
+    established: 1955,
+    managerEmail: "agrc.abc.123@gmail.com",
+    phoneNumber: "032-5779408",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "4",
+    name: "Poththukulama Research Center",
+    district: "Puttalam",
+    area: "81.64 ha",
+    established: 1970,
+    managerEmail: "poththukulama.cri@gmail.com",
+    phoneNumber: "031-3319993",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "5",
+    name: "Walpita Research Center",
+    district: "Gampaha",
+    area: "17.81 ha",
+    established: 1935,
+    managerEmail: "criwalpita@gmail.com",
+    phoneNumber: "033-2272870",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "6",
+    name: "Thabbowa Research Center",
+    district: "Puttalam",
+    area: "2.82 ha",
+    established: null,
+    managerEmail: "thabbowaresearchcentercri@gmail.com",
+    phoneNumber: "032-2051430",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "7",
+    name: "Middeniya Research Center",
+    district: "Hambantota",
+    area: "30.57 ha",
+    established: 2008,
+    managerEmail: "middeniyacri@gmail.com",
+    phoneNumber: "047-3624646",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "8",
+    name: "Makadura Genetic Resources Center",
+    district: "Kurunegala",
+    area: "58.68 ha",
+    established: 1984,
+    managerEmail: "makanduragrc@gmail.com",
+    phoneNumber: "031-2299139",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "9",
+    name: "Waligama Genetic Resources Center",
+    district: "Matara",
+    area: "6.89 ha",
+    established: 2016,
+    managerEmail: "sanjeewakumaraea@gmail.com",
+    phoneNumber: "041-2252336",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "10",
+    name: "Maduruoya Genetic Resources Center",
+    district: "Polonnaruwa",
+    area: "86.64 ha",
+    established: 1984,
+    managerEmail: "grcmaduruoya@gmail.com",
+    phoneNumber: "027-3279344",
+    coverImage: null,
+    status: "active"
+  },
+  {
+    estateCode: "11",
+    name: "Pallama Genetic Resources Center",
+    district: "Puttalam",
+    area: "263.72 ha",
+    established: 1998,
+    managerEmail: "cripallama123@gmail.com",
+    phoneNumber: "032-3329720",
+    coverImage: null,
+    status: "active"
+  }
 ];
 
 const seedEstates = async () => {
