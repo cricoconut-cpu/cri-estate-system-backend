@@ -21,10 +21,18 @@ const surveySchema = new mongoose.Schema(
 
 
     files: {
-      geoJsonUrl: {
-        type: String,
-        required: true,
+      geoJson: {
+        url: {
+          type: String,
+          required: true,
+        },
+
+        path: {
+          type: String,
+          required: true,
+        },
       },
+
 
       orthomosaic: {
         imageUrl: {
@@ -32,7 +40,18 @@ const surveySchema = new mongoose.Schema(
           required: true,
         },
 
+        imagePath: {
+          type: String,
+          required: true,
+        },
+
+
         metadataUrl: {
+          type: String,
+          required: true,
+        },
+
+        metadataPath: {
           type: String,
           required: true,
         },
@@ -43,7 +62,6 @@ const surveySchema = new mongoose.Schema(
     spatial: {
       crs: {
         type: String,
-        required: true,
         default: "EPSG:3857",
       },
 
@@ -123,13 +141,18 @@ const surveySchema = new mongoose.Schema(
 );
 
 
-// Fast estate dashboard queries
+// Improves queries:
+// "Get Makandura 2025 survey"
 surveySchema.index({
   estate: 1,
   year: 1,
 });
 
 
-const Survey = mongoose.model("Survey", surveySchema);
+const Survey = mongoose.model(
+  "Survey",
+  surveySchema
+);
+
 
 export default Survey;
