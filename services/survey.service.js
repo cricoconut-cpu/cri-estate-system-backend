@@ -1,16 +1,9 @@
 import Estate from "../models/Estate.js";
 import Survey from "../models/Survey.js";
 
-import {
-    deleteFile,
-    uploadFile,
-} from "../utils/supabase.storage.js";
+import { deleteFile, uploadFile } from "../utils/supabase.storage.js";
 
-import {
-    calculateSurveyStatistics,
-} from "../utils/geojson.parser.js";
-
-
+import { calculateSurveyStatistics } from "../utils/geojson.parser.js";
 
 export const createSurvey = async ({
   estateId,
@@ -19,214 +12,142 @@ export const createSurvey = async ({
   files,
   uploadedBy,
 }) => {
-
-
   // 1. Validate files
 
-  if (
-    !files?.geoJson ||
-    !files?.orthomosaic ||
-    !files?.metadata
-  ) {
-
-    throw new Error(
-      "All survey files are required."
-    );
-
+  if (!files?.geoJson || !files?.orthomosaic || !files?.metadata) {
+    throw new Error("All survey files are required.");
   }
 
+  // 2. Check estate
 
-
-  // 2. Check estate exists
-
-  const estate =
-    await Estate.findById(
-      estateId
-    );
-
+  const estate = await Estate.findById(estateId);
 
   if (!estate) {
-
-    throw new Error(
-      "Estate not found."
-    );
-
+    throw new Error("Estate not found.");
   }
 
+  // 3. Find existing survey
 
-
-  // 3. Check existing survey
-
-  const existingSurvey =
-    await Survey.findOne({
-      estate: estateId,
-      year,
-    });
-
-
-
-  // 4. Delete previous files
-
-  if (existingSurvey) {
-
-
-    await deleteFile(
-      existingSurvey.files.geoJson.path
-    );
-
-
-    await deleteFile(
-      existingSurvey.files.orthomosaic.imagePath
-    );
-
-
-    await deleteFile(
-      existingSurvey.files.orthomosaic.metadataPath
-    );
-
-  }
-
-
-
-  // 5. Create storage paths
-
-  const basePath =
-    `estates/${estateId}/${year}`;
-
-
-
-  const geoJsonPath =
-    `${basePath}/geojson/trees.geojson`;
-
-
-  const imagePath =
-    `${basePath}/orthomosaic/map.png`;
-
-
-  const metadataPath =
-    `${basePath}/metadata/map.png.aux.xml`;
-
-
-
-
-  // 6. Upload files
-
-
-  const geoJsonFile =
-    await uploadFile(
-      files.geoJson[0],
-      geoJsonPath
-    );
-
-
-  const imageFile =
-    await uploadFile(
-      files.orthomosaic[0],
-      imagePath
-    );
-
-
-  const metadataFile =
-    await uploadFile(
-      files.metadata[0],
-      metadataPath
-    );
-
-
-
-
-  // 7. Parse GeoJSON
-
-
-  const geoJson =
-    JSON.parse(
-      files.geoJson[0]
-      .buffer
-      .toString()
-    );
-
-
-  const statistics =
-    calculateSurveyStatistics(
-      geoJson
-    );
-
-
-
-
-  // 8. Survey data
-
-
-  const surveyData = {
-
+  const existingSurvey = await Survey.findOne({
     estate: estateId,
-
     year,
+  });
 
-    surveyDate,
+  // 4. Create new upload version
 
+  const uploadVersion = Date.now();
 
-    files: {
+  const basePath = `estates/${estateId}/${year}/${uploadVersion}`;
 
-      geoJson: {
+  const geoJsonPath = `${basePath}/geojson/trees.geojson`;
 
-        url: geoJsonFile.url,
+  const imagePath = `${basePath}/orthomosaic/map.png`;
 
-        path: geoJsonFile.path,
+  const metadataPath = `${basePath}/metadata/map.png.aux.xml`;
 
-      },
+  let uploadedFiles;
 
+  try {
+    // 5. Upload new files first
+
+    const geoJsonFile = await uploadFile(files.geoJson[0], geoJsonPath);
+
+    const imageFile = await uploadFile(files.orthomosaic[0], imagePath);
+
+    const metadataFile = await uploadFile(files.metadata[0], metadataPath);
+
+    uploadedFiles = {
+      geoJson: geoJsonFile,
 
       orthomosaic: {
+        image: imageFile,
 
-        imageUrl: imageFile.url,
+        metadata: metadataFile,
+      },
+    };
 
-        imagePath: imageFile.path,
+    // 6. Parse GeoJSON
 
+    const geoJson = JSON.parse(files.geoJson[0].buffer.toString());
 
-        metadataUrl: metadataFile.url,
+    const statistics = calculateSurveyStatistics(geoJson);
 
-        metadataPath: metadataFile.path,
+    // 7. Prepare survey data
 
+    const surveyData = {
+      estate: estateId,
+
+      year,
+
+      surveyDate,
+
+      files: {
+        geoJson: {
+          url: uploadedFiles.geoJson.url,
+
+          path: uploadedFiles.geoJson.path,
+        },
+
+        orthomosaic: {
+          imageUrl: uploadedFiles.orthomosaic.image.url,
+
+          imagePath: uploadedFiles.orthomosaic.image.path,
+
+          metadataUrl: uploadedFiles.orthomosaic.metadata.url,
+
+          metadataPath: uploadedFiles.orthomosaic.metadata.path,
+        },
       },
 
-    },
+      statistics,
 
+      uploadedBy,
 
-    statistics,
+      status: "completed",
+    };
 
+    // 8. Update existing survey
+    // or create new one
 
-    uploadedBy,
+    let savedSurvey;
 
+    if (existingSurvey) {
+      Object.assign(existingSurvey, surveyData);
 
-    status: "completed",
+      savedSurvey = await existingSurvey.save();
+    } else {
+      savedSurvey = await Survey.create(surveyData);
+    }
 
-  };
+    // 9. Delete old files AFTER success
 
+    if (existingSurvey) {
+      const oldFiles = [
+        existingSurvey.files.geoJson.path,
 
+        existingSurvey.files.orthomosaic.imagePath,
 
+        existingSurvey.files.orthomosaic.metadataPath,
+      ];
 
-  // 9. Replace or create
+      for (const filePath of oldFiles) {
+        await deleteFile(filePath);
+      }
+    }
 
+    return savedSurvey;
+  } catch (error) {
+    // If upload/update fails,
+    // new files should be removed
 
-  if (existingSurvey) {
+    if (uploadedFiles) {
+      await deleteFile(uploadedFiles.geoJson.path);
 
+      await deleteFile(uploadedFiles.orthomosaic.image.path);
 
-    Object.assign(
-      existingSurvey,
-      surveyData
-    );
+      await deleteFile(uploadedFiles.orthomosaic.metadata.path);
+    }
 
-
-    return await existingSurvey.save();
-
+    throw error;
   }
-
-
-
-  return await Survey.create(
-    surveyData
-  );
-
-
 };
