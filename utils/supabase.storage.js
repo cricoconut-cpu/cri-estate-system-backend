@@ -10,7 +10,8 @@ const supabase = createClient(
 );
 
 
-const bucketName = process.env.SUPABASE_BUCKET_NAME;
+const bucketName =
+  process.env.SUPABASE_BUCKET_NAME;
 
 
 
@@ -19,7 +20,9 @@ export const uploadFile = async (
   path
 ) => {
 
-  const { error } = await supabase
+  const {
+    error,
+  } = await supabase
     .storage
     .from(bucketName)
     .upload(
@@ -33,9 +36,11 @@ export const uploadFile = async (
 
 
   if (error) {
+
     throw new Error(
       `File upload failed: ${error.message}`
     );
+
   }
 
 
@@ -47,7 +52,12 @@ export const uploadFile = async (
     .getPublicUrl(path);
 
 
-  return data.publicUrl;
+
+  return {
+    url: data.publicUrl,
+    path,
+  };
+
 };
 
 
@@ -55,6 +65,7 @@ export const uploadFile = async (
 export const deleteFile = async (
   path
 ) => {
+
 
   const {
     error,
@@ -67,9 +78,11 @@ export const deleteFile = async (
 
 
   if (error) {
+
     throw new Error(
       `File deletion failed: ${error.message}`
     );
+
   }
 
 };
