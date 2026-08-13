@@ -8,6 +8,7 @@ import errorHandler from "./middleware/error.middleware.js";
 // Routes
 import authRoutes from "./routes/auth.routes.js";
 import estateRoutes from "./routes/estate.routes.js";
+import surveyRoutes from "./routes/survey.routes.js";
 
 dotenv.config();
 connectDB();
@@ -27,7 +28,7 @@ app.get("/", (req, res) => {
 // Register Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/estates", estateRoutes);
-//app.use("/api/surveys", surveyRoutes);
+app.use("/api/surveys", surveyRoutes);
 
 // Error Handling Middleware (must be after routes)
 app.use(errorHandler);

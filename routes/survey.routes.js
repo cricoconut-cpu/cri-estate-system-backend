@@ -4,7 +4,6 @@ import { createSurvey } from "../controllers/survey.controller.js";
 
 import { protect } from "../middleware/auth.middleware.js";
 
-import { authorizeRoles } from "../middleware/rbac.middleware.js";
 
 import { createSurveyValidation } from "../validators/survey.validator.js";
 
