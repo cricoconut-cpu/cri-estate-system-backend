@@ -1,23 +1,36 @@
 import express from "express";
 
-import { createSurvey } from "../controllers/survey.controller.js";
+import {
+  createSurvey,
+} from "../controllers/survey.controller.js";
 
-import { protect } from "../middleware/auth.middleware.js";
+import protect from "../middleware/auth.middleware.js";
 
+import authorize from "../middleware/role.middleware.js";
 
-import { createSurveyValidation } from "../validators/survey.validator.js";
+import {
+  createSurveyValidation,
+} from "../validators/survey.validator.js";
 
-import { surveyUpload } from "../middleware/upload.middleware.js";
+import {
+  surveyUpload,
+} from "../middleware/upload.middleware.js";
+
 
 const router = express.Router();
+
 
 router.post(
   "/",
   protect,
-  authorizeRoles("Admin", "Analyst"),
+  authorize(
+    "Admin",
+    "Analyst"
+  ),
   createSurveyValidation,
   surveyUpload,
-  createSurvey,
+  createSurvey
 );
+
 
 export default router;
