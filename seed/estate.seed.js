@@ -66,7 +66,7 @@ const estates = [
     name: "Thabbowa Research Center",
     district: "Puttalam",
     area: "2.82 ha",
-    established: null,
+    established: 0,   // Established year is not provided in the original data
     managerEmail: "thabbowaresearchcentercri@gmail.com",
     phoneNumber: "032-2051430",
     coverImage: null,
