@@ -30,7 +30,8 @@ const estateSchema = new mongoose.Schema(
 
     established: {
       type: Number,
-      required: true,
+      required: false,
+      default: null,
       min: 1800,
     },
 

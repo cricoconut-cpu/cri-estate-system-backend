@@ -66,7 +66,7 @@ const estates = [
     name: "Thabbowa Research Center",
     district: "Puttalam",
     area: "2.82 ha",
-    established: 0,   // Established year is not provided in the original data
+    established: 1927,   // fake data with the assumption that the year is 1927, as the actual year is not provided in the original data
     managerEmail: "thabbowaresearchcentercri@gmail.com",
     phoneNumber: "032-2051430",
     coverImage: null,
@@ -137,36 +137,40 @@ const seedEstates = async () => {
     await Estate.deleteMany();
 
     for (const estate of estates) {
-      // Find the manager
-      const manager = await User.findOne({
-        email: estate.managerEmail,
-      });
+      try {
+        // Find the manager
+        const manager = await User.findOne({
+          email: estate.managerEmail,
+        });
 
-      if (!manager) {
-        console.log(
-          `Manager '${estate.managerEmail}' not found. Skipping ${estate.name}.`
-        );
-        continue;
+        if (!manager) {
+          console.log(
+            `Manager '${estate.managerEmail}' not found. Skipping ${estate.name}.`
+          );
+          continue;
+        }
+
+        // Create estate
+        const createdEstate = await Estate.create({
+          estateCode: estate.estateCode,
+          name: estate.name,
+          district: estate.district,
+          area: estate.area,
+          established: estate.established,
+          manager: manager._id,
+          phoneNumber: estate.phoneNumber,
+          coverImage: estate.coverImage,
+          status: estate.status,
+        });
+
+        // Assign estate to the manager
+        manager.assignedEstate = createdEstate._id;
+        await manager.save();
+
+        console.log(`${estate.name} seeded successfully.`);
+      } catch (error) {
+        console.error(`Failed to seed ${estate.name}:`, error.message);
       }
-
-      // Create estate
-      const createdEstate = await Estate.create({
-        estateCode: estate.estateCode,
-        name: estate.name,
-        district: estate.district,
-        area: estate.area,
-        established: estate.established,
-        manager: manager._id,
-        phoneNumber: estate.phoneNumber,
-        coverImage: estate.coverImage,
-        status: estate.status,
-      });
-
-      // Assign estate to the manager
-      manager.assignedEstate = createdEstate._id;
-      await manager.save();
-
-      console.log(`${estate.name} seeded successfully.`);
     }
 
     console.log("Estate seeding completed.");
