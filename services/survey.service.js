@@ -155,3 +155,18 @@ export const createSurvey = async ({
     throw error;
   }
 };
+
+export const getSurveyByEstateYear = async (estateId, year) => {
+  const survey = await Survey.findOne({
+    estate: estateId,
+    year,
+  })
+    .populate("estate", "name district area")
+    .populate("uploadedBy", "name email role");
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  return survey;
+};

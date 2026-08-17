@@ -35,3 +35,23 @@ export const createSurvey = async (req, res) => {
     });
   }
 };
+
+export const getSurveyByEstateYear = async (req, res) => {
+  try {
+    const { estateId, year } = req.params;
+
+    const survey = await surveyService.getSurveyByEstateYear(estateId, year);
+
+    return res.status(200).json({
+      success: true,
+
+      data: survey,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};
