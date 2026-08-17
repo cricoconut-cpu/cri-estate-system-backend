@@ -42,19 +42,20 @@ router.post(
   createSurvey
 );
 
+// Estate history
+router.get(
+  "/estate/:estateId",
+  protect,
+  getEstateSurveys
+);
 
 
-// Get survey by estate and year
+// Single survey
 router.get(
   "/:estateId/:year",
   protect,
   getSurveyByEstateYear
 );
 
-router.get(
-  "/estate/:estateId",
-  protect,
-  getEstateSurveys
-);
 
 export default router;
