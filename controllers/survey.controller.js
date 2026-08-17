@@ -55,3 +55,47 @@ export const getSurveyByEstateYear = async (req, res) => {
     });
   }
 };
+
+
+export const getEstateSurveys = async (
+  req,
+  res
+) => {
+
+  try {
+
+
+    const {
+      estateId,
+    } = req.params;
+
+
+    const surveys =
+      await surveyService.getEstateSurveys(
+        estateId
+      );
+
+
+    return res.status(200).json({
+
+      success:true,
+
+      data:surveys,
+
+    });
+
+
+  } catch(error) {
+
+
+    return res.status(404).json({
+
+      success:false,
+
+      message:error.message,
+
+    });
+
+  }
+
+};

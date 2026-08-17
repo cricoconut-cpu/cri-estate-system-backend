@@ -170,3 +170,34 @@ export const getSurveyByEstateYear = async (estateId, year) => {
 
   return survey;
 };
+
+export const getEstateSurveys = async (
+  estateId
+) => {
+
+
+  const surveys =
+    await Survey.find({
+      estate: estateId,
+    })
+    .sort({
+      year: -1,
+      surveyDate: -1,
+    })
+    .select(
+      "year surveyDate statistics status createdAt"
+    );
+
+
+  if (!surveys.length) {
+
+    throw new Error(
+      "No surveys found for this estate."
+    );
+
+  }
+
+
+  return surveys;
+
+};

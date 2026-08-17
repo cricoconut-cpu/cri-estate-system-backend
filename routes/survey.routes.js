@@ -3,6 +3,7 @@ import express from "express";
 
 import {
   createSurvey,
+  getEstateSurveys,
   getSurveyByEstateYear,
 } from "../controllers/survey.controller.js";
 
@@ -50,6 +51,10 @@ router.get(
   getSurveyByEstateYear
 );
 
-
+router.get(
+  "/estate/:estateId",
+  protect,
+  getEstateSurveys
+);
 
 export default router;
