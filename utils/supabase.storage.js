@@ -10,6 +10,16 @@ const supabase = createClient(
 
 const bucketName = process.env.SUPABASE_BUCKET_NAME;
 
+console.log(
+  "SUPABASE URL:",
+  process.env.SUPABASE_URL
+);
+
+console.log(
+  "BUCKET:",
+  bucketName
+);
+
 export const uploadFile = async (file, path) => {
   const { error } = await supabase.storage
     .from(bucketName)
