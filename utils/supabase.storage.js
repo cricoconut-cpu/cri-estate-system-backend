@@ -10,15 +10,9 @@ const supabase = createClient(
 
 const bucketName = process.env.SUPABASE_BUCKET_NAME;
 
-console.log(
-  "SUPABASE URL:",
-  process.env.SUPABASE_URL
-);
+console.log("SUPABASE URL:", process.env.SUPABASE_URL);
 
-console.log(
-  "BUCKET:",
-  bucketName
-);
+console.log("BUCKET:", bucketName);
 
 export const uploadFile = async (file, path) => {
   const { error } = await supabase.storage
@@ -46,4 +40,18 @@ export const deleteFile = async (path) => {
   if (error) {
     throw new Error(`File deletion failed: ${error.message}`);
   }
+};
+
+export const downloadFile = async (path) => {
+  const { data, error } = await supabase.storage
+    .from(bucketName)
+    .download(path);
+
+  if (error) {
+    throw new Error(`File download failed: ${error.message}`);
+  }
+
+  const text = await data.text();
+
+  return JSON.parse(text);
 };

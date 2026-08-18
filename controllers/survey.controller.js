@@ -56,46 +56,42 @@ export const getSurveyByEstateYear = async (req, res) => {
   }
 };
 
-
-export const getEstateSurveys = async (
-  req,
-  res
-) => {
-
+export const getEstateSurveys = async (req, res) => {
   try {
+    const { estateId } = req.params;
 
-
-    const {
-      estateId,
-    } = req.params;
-
-
-    const surveys =
-      await surveyService.getEstateSurveys(
-        estateId
-      );
-
+    const surveys = await surveyService.getEstateSurveys(estateId);
 
     return res.status(200).json({
+      success: true,
 
-      success:true,
-
-      data:surveys,
-
+      data: surveys,
     });
-
-
-  } catch(error) {
-
-
+  } catch (error) {
     return res.status(404).json({
+      success: false,
 
-      success:false,
-
-      message:error.message,
-
+      message: error.message,
     });
-
   }
+};
 
+export const getSurveyGeoJson = async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+
+    const geoJson = await surveyService.getSurveyGeoJson(surveyId);
+
+    return res.status(200).json({
+      success: true,
+
+      data: geoJson,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
 };

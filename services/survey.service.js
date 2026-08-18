@@ -1,7 +1,11 @@
 import Estate from "../models/Estate.js";
 import Survey from "../models/Survey.js";
 
-import { deleteFile, uploadFile } from "../utils/supabase.storage.js";
+import {
+  deleteFile,
+  downloadFile,
+  uploadFile,
+} from "../utils/supabase.storage.js";
 
 import { calculateSurveyStatistics } from "../utils/geojson.parser.js";
 
@@ -171,33 +175,43 @@ export const getSurveyByEstateYear = async (estateId, year) => {
   return survey;
 };
 
-export const getEstateSurveys = async (
-  estateId
-) => {
-
-
-  const surveys =
-    await Survey.find({
-      estate: estateId,
-    })
+export const getEstateSurveys = async (estateId) => {
+  const surveys = await Survey.find({
+    estate: estateId,
+  })
     .sort({
       year: -1,
       surveyDate: -1,
     })
-    .select(
-      "year surveyDate statistics status createdAt"
-    );
-
+    .select("year surveyDate statistics status createdAt");
 
   if (!surveys.length) {
-
-    throw new Error(
-      "No surveys found for this estate."
-    );
-
+    throw new Error("No surveys found for this estate.");
   }
 
-
   return surveys;
+};
 
+export const getSurveyGeoJson = async (surveyId) => {
+  // 1. Find survey
+
+  const survey = await Survey.findById(surveyId);
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  // 2. Get GeoJSON path
+
+  const geoJsonPath = survey.files.geoJson.path;
+
+  if (!geoJsonPath) {
+    throw new Error("GeoJSON file path not found.");
+  }
+
+  // 3. Download from Supabase
+
+  const geoJson = await downloadFile(geoJsonPath);
+
+  return geoJson;
 };
