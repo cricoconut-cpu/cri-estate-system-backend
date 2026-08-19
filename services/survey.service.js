@@ -215,3 +215,25 @@ export const getSurveyGeoJson = async (surveyId) => {
 
   return geoJson;
 };
+
+export const getSurveyMapData = async (surveyId) => {
+  const survey = await Survey.findById(surveyId);
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  return {
+    orthomosaic: {
+      imageUrl: survey.files.orthomosaic.imageUrl,
+
+      metadataUrl: survey.files.orthomosaic.metadataUrl,
+    },
+
+    spatial: {
+      crs: survey.spatial.crs,
+
+      bounds: survey.spatial.bounds,
+    },
+  };
+};

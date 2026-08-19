@@ -5,6 +5,7 @@ import {
   getEstateSurveys,
   getSurveyByEstateYear,
   getSurveyGeoJson,
+  getSurveyMapData,
 } from "../controllers/survey.controller.js";
 
 import protect from "../middleware/auth.middleware.js";
@@ -32,6 +33,9 @@ router.get("/estate/:estateId", protect, getEstateSurveys);
 
 // Download GeoJSON
 router.get("/:surveyId/geojson", protect, getSurveyGeoJson);
+
+// Download Map Data
+router.get("/:surveyId/map", protect, getSurveyMapData);
 
 // Single survey
 router.get("/:estateId/:year", protect, getSurveyByEstateYear);

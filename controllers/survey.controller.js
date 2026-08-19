@@ -95,3 +95,23 @@ export const getSurveyGeoJson = async (req, res) => {
     });
   }
 };
+
+export const getSurveyMapData = async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+
+    const mapData = await surveyService.getSurveyMapData(surveyId);
+
+    return res.status(200).json({
+      success: true,
+
+      data: mapData,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};
