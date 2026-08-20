@@ -19,7 +19,6 @@ const surveySchema = new mongoose.Schema(
       required: true,
     },
 
-
     files: {
       geoJson: {
         url: {
@@ -33,7 +32,6 @@ const surveySchema = new mongoose.Schema(
         },
       },
 
-
       orthomosaic: {
         imageUrl: {
           type: String,
@@ -44,46 +42,50 @@ const surveySchema = new mongoose.Schema(
           type: String,
           required: true,
         },
+      },
 
-
-        metadataUrl: {
+      bounds: {
+        url: {
           type: String,
           required: true,
         },
 
-        metadataPath: {
+        path: {
           type: String,
           required: true,
         },
       },
     },
 
-
     spatial: {
       crs: {
         type: String,
-        default: "EPSG:3857",
+        required: true,
+        default: "EPSG:4326",
       },
 
       bounds: {
         north: {
           type: Number,
+          required: true,
         },
 
         south: {
           type: Number,
+          required: true,
         },
 
         east: {
           type: Number,
+          required: true,
         },
 
         west: {
           type: Number,
+          required: true,
         },
       },
     },
-
 
     statistics: {
       totalTrees: {
@@ -117,42 +119,29 @@ const surveySchema = new mongoose.Schema(
       },
     },
 
-
     uploadedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-
     status: {
       type: String,
-      enum: [
-        "processing",
-        "completed",
-        "failed",
-      ],
+      enum: ["processing", "completed", "failed"],
       default: "processing",
     },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
-
-// Improves queries:
-// "Get Makandura 2025 survey"
+// Fast estate + year queries
 surveySchema.index({
   estate: 1,
   year: 1,
 });
 
-
-const Survey = mongoose.model(
-  "Survey",
-  surveySchema
-);
-
+const Survey = mongoose.model("Survey", surveySchema);
 
 export default Survey;

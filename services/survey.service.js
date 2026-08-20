@@ -1,3 +1,18 @@
+import Estate from "../models/Estate.js";
+import Survey from "../models/Survey.js";
+
+import {
+  deleteFile,
+  downloadFile,
+  uploadFile,
+} from "../utils/supabase.storage.js";
+
+import { calculateSurveyStatistics } from "../utils/geojson.parser.js";
+
+// =====================================================
+// CREATE / REPLACE SURVEY
+// =====================================================
+
 export const createSurvey = async ({
   estateId,
   year,
@@ -11,7 +26,7 @@ export const createSurvey = async ({
     throw new Error("GeoJSON, orthomosaic image and bounds file are required.");
   }
 
-  // 2. Check estate exists
+  // 2. Check estate
 
   const estate = await Estate.findById(estateId);
 
@@ -19,28 +34,28 @@ export const createSurvey = async ({
     throw new Error("Estate not found.");
   }
 
-  // 3. Find existing survey for same estate + year
+  // 3. Find existing survey
+  //    Same estate + same year = replacement
 
   const existingSurvey = await Survey.findOne({
     estate: estateId,
     year,
   });
 
-  // 4. Save old file paths before replacement
+  // 4. Save old file paths
+  //    BEFORE replacing the MongoDB document
 
   const oldFiles = existingSurvey
     ? {
-        geoJson: existingSurvey.files.geoJson.path,
+        geoJson: existingSurvey.files?.geoJson?.path,
 
-        image: existingSurvey.files.orthomosaic.imagePath,
+        image: existingSurvey.files?.orthomosaic?.imagePath,
 
-        // Old surveys may still have metadataPath.
-        // Keep this only for deleting previously uploaded surveys.
-        metadata: existingSurvey.files.orthomosaic.metadataPath,
+        bounds: existingSurvey.files?.bounds?.path,
       }
     : null;
 
-  // 5. Create new upload version
+  // 5. Create unique upload version
 
   const uploadVersion = Date.now();
 
@@ -55,7 +70,9 @@ export const createSurvey = async ({
   let uploadedFiles = null;
 
   try {
-    // 6. Upload new files
+    // =================================================
+    // 6. Upload new files to Supabase
+    // =================================================
 
     const geoJsonFile = await uploadFile(files.geoJson[0], geoJsonPath);
 
@@ -73,17 +90,23 @@ export const createSurvey = async ({
       bounds: boundsFile,
     };
 
+    // =================================================
     // 7. Parse GeoJSON
+    // =================================================
 
     const geoJson = JSON.parse(files.geoJson[0].buffer.toString("utf-8"));
 
     const statistics = calculateSurveyStatistics(geoJson);
 
+    // =================================================
     // 8. Parse bounds JSON
+    // =================================================
 
     const spatialData = JSON.parse(files.bounds[0].buffer.toString("utf-8"));
 
-    // 9. Validate bounds structure
+    // =================================================
+    // 9. Validate bounds JSON
+    // =================================================
 
     if (
       !spatialData.crs ||
@@ -96,7 +119,9 @@ export const createSurvey = async ({
       throw new Error("Invalid bounds JSON format.");
     }
 
-    // 10. Prepare survey data
+    // =================================================
+    // 10. Prepare Survey document
+    // =================================================
 
     const surveyData = {
       estate: estateId,
@@ -116,9 +141,12 @@ export const createSurvey = async ({
           imageUrl: uploadedFiles.orthomosaic.image.url,
 
           imagePath: uploadedFiles.orthomosaic.image.path,
+        },
 
-          // No new AUX/XML metadata
-          // metadata fields are intentionally omitted.
+        bounds: {
+          url: uploadedFiles.bounds.url,
+
+          path: uploadedFiles.bounds.path,
         },
       },
 
@@ -143,7 +171,9 @@ export const createSurvey = async ({
       status: "completed",
     };
 
-    // 11. Create or replace survey
+    // =================================================
+    // 11. Create new OR replace existing survey
+    // =================================================
 
     let savedSurvey;
 
@@ -155,7 +185,10 @@ export const createSurvey = async ({
       savedSurvey = await Survey.create(surveyData);
     }
 
-    // 12. Delete old files AFTER successful replacement
+    // =================================================
+    // 12. Delete OLD files
+    //     only after successful DB save
+    // =================================================
 
     if (oldFiles) {
       if (oldFiles.geoJson) {
@@ -166,17 +199,16 @@ export const createSurvey = async ({
         await deleteFile(oldFiles.image);
       }
 
-      // Delete old AUX/XML if the previous
-      // survey was uploaded using the old system.
-      if (oldFiles.metadata) {
-        await deleteFile(oldFiles.metadata);
+      if (oldFiles.bounds) {
+        await deleteFile(oldFiles.bounds);
       }
     }
 
     return savedSurvey;
   } catch (error) {
-    // 13. Remove newly uploaded files
-    // if anything fails
+    // =================================================
+    // 13. Cleanup NEW files if something failed
+    // =================================================
 
     if (uploadedFiles) {
       if (uploadedFiles.geoJson?.path) {
@@ -194,4 +226,90 @@ export const createSurvey = async ({
 
     throw error;
   }
+};
+
+// =====================================================
+// GET SURVEY BY ESTATE + YEAR
+// =====================================================
+
+export const getSurveyByEstateYear = async (estateId, year) => {
+  const survey = await Survey.findOne({
+    estate: estateId,
+    year,
+  })
+    .populate("estate", "name district area")
+    .populate("uploadedBy", "name email role");
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  return survey;
+};
+
+// =====================================================
+// GET ALL SURVEYS OF ESTATE
+// =====================================================
+
+export const getEstateSurveys = async (estateId) => {
+  const surveys = await Survey.find({
+    estate: estateId,
+  })
+    .sort({
+      year: -1,
+      surveyDate: -1,
+    })
+    .select("year surveyDate statistics status createdAt");
+
+  if (!surveys.length) {
+    throw new Error("No surveys found for this estate.");
+  }
+
+  return surveys;
+};
+
+// =====================================================
+// GET SURVEY GEOJSON
+// =====================================================
+
+export const getSurveyGeoJson = async (surveyId) => {
+  const survey = await Survey.findById(surveyId);
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  const geoJsonPath = survey.files?.geoJson?.path;
+
+  if (!geoJsonPath) {
+    throw new Error("GeoJSON file path not found.");
+  }
+
+  const geoJson = await downloadFile(geoJsonPath);
+
+  return geoJson;
+};
+
+// =====================================================
+// GET SURVEY MAP DATA
+// =====================================================
+
+export const getSurveyMapData = async (surveyId) => {
+  const survey = await Survey.findById(surveyId);
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  return {
+    orthomosaic: {
+      imageUrl: survey.files.orthomosaic.imageUrl,
+    },
+
+    spatial: {
+      crs: survey.spatial.crs,
+
+      bounds: survey.spatial.bounds,
+    },
+  };
 };
