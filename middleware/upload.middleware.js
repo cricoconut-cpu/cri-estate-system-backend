@@ -1,23 +1,37 @@
 import multer from "multer";
+import path from "path";
 
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    "application/json",
-    "image/png",
-  ];
+  const extension = path.extname(file.originalname).toLowerCase();
 
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedExtensions = {
+    ".geojson": [
+      "application/json",
+      "application/geo+json",
+      "text/plain",
+      "application/octet-stream",
+    ],
+
+    ".json": [
+      "application/json",
+      "application/geo+json",
+      "text/plain",
+      "application/octet-stream",
+    ],
+
+    ".png": ["image/png", "application/octet-stream"],
+  };
+
+  const allowedMimeTypes = allowedExtensions[extension];
+
+  if (allowedMimeTypes && allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
-  } else {
-    cb(
-      new Error(
-        `Invalid file type for ${file.fieldname}.`
-      ),
-      false
-    );
+    return;
   }
+
+  cb(new Error(`Invalid file type for ${file.fieldname}.`), false);
 };
 
 const upload = multer({
@@ -26,7 +40,7 @@ const upload = multer({
   fileFilter,
 
   limits: {
-    fileSize: 100 * 1024 * 1024,  // 100 MB
+    fileSize: 100 * 1024 * 1024,
   },
 });
 
