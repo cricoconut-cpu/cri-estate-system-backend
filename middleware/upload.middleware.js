@@ -3,16 +3,20 @@ import multer from "multer";
 const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
-  const allowedExtensions = [".geojson", ".json", ".png", ".xml"];
+  const allowedTypes = [
+    "application/json",
+    "image/png",
+  ];
 
-  const fileName = file.originalname.toLowerCase();
-
-  const isAllowed = allowedExtensions.some((ext) => fileName.endsWith(ext));
-
-  if (isAllowed) {
+  if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Invalid file type."), false);
+    cb(
+      new Error(
+        `Invalid file type for ${file.fieldname}.`
+      ),
+      false
+    );
   }
 };
 
@@ -22,7 +26,7 @@ const upload = multer({
   fileFilter,
 
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB
+    fileSize: 100 * 1024 * 1024,  // 100 MB
   },
 });
 
@@ -38,7 +42,7 @@ export const surveyUpload = upload.fields([
   },
 
   {
-    name: "metadata",
+    name: "bounds",
     maxCount: 1,
   },
 ]);
