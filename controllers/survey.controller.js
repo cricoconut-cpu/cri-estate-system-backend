@@ -1,5 +1,69 @@
 import * as surveyService from "../services/survey.service.js";
 
+import Survey from "../models/Survey.js";
+
+export const getSurveySummary = async (req, res) => {
+  try {
+    const totalSurveys = await Survey.countDocuments();
+
+    const latestSurvey = await Survey.findOne()
+      .sort({
+        createdAt: -1,
+      })
+      .populate("estate", "name");
+
+    const statistics = await Survey.aggregate([
+      {
+        $group: {
+          _id: null,
+
+          totalTrees: {
+            $sum: "$statistics.totalTrees",
+          },
+
+          healthy: {
+            $sum: "$statistics.healthy",
+          },
+
+          moderate: {
+            $sum: "$statistics.moderate",
+          },
+
+          mildStress: {
+            $sum: "$statistics.mildStress",
+          },
+
+          severeStress: {
+            $sum: "$statistics.severeStress",
+          },
+
+          critical: {
+            $sum: "$statistics.critical",
+          },
+        },
+      },
+    ]);
+
+    return res.status(200).json({
+      success: true,
+
+      data: {
+        totalSurveys,
+
+        latestSurvey,
+
+        statistics: statistics[0] || {},
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};
+
 export const createSurvey = async (req, res) => {
   try {
     const { estateId, year, surveyDate } = req.body;

@@ -8,13 +8,11 @@ import {
   getSurveyMapData,
 } from "../controllers/survey.controller.js";
 
+import { getSurveySummary } from "../controllers/survey.controller.js";
 import protect from "../middleware/auth.middleware.js";
-
 import authorize from "../middleware/role.middleware.js";
-
-import { createSurveyValidation } from "../validators/survey.validator.js";
-
 import { surveyUpload } from "../middleware/upload.middleware.js";
+import { createSurveyValidation } from "../validators/survey.validator.js";
 
 const router = express.Router();
 
@@ -33,6 +31,9 @@ router.get("/estate/:estateId", protect, getEstateSurveys);
 
 // Download GeoJSON
 router.get("/:surveyId/geojson", protect, getSurveyGeoJson);
+
+// Survey summary
+router.get("/summary", protect, authorize("Admin"), getSurveySummary);
 
 // Download Map Data
 router.get("/:surveyId/map", protect, getSurveyMapData);
