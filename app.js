@@ -9,6 +9,7 @@ import errorHandler from "./middleware/error.middleware.js";
 import authRoutes from "./routes/auth.routes.js";
 import estateRoutes from "./routes/estate.routes.js";
 import surveyRoutes from "./routes/survey.routes.js";
+import userRoutes from "./routes/user.routes.js";
 
 dotenv.config();
 connectDB();
@@ -29,6 +30,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/estates", estateRoutes);
 app.use("/api/surveys", surveyRoutes);
+app.use("/api/users", userRoutes);
 
 // Error Handling Middleware (must be after routes)
 app.use(errorHandler);
