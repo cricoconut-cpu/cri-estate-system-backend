@@ -7,6 +7,7 @@ import errorHandler from "./middleware/error.middleware.js";
 
 // Routes
 import authRoutes from "./routes/auth.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 import estateRoutes from "./routes/estate.routes.js";
 import surveyRoutes from "./routes/survey.routes.js";
 import userRoutes from "./routes/user.routes.js";
@@ -31,6 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/estates", estateRoutes);
 app.use("/api/surveys", surveyRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Error Handling Middleware (must be after routes)
 app.use(errorHandler);
