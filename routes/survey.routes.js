@@ -4,8 +4,9 @@ import {
   createSurvey,
   getEstateSurveys,
   getSurveyByEstateYear,
+  getSurveyById,
   getSurveyGeoJson,
-  getSurveyMapData,
+  getSurveyMapData
 } from "../controllers/survey.controller.js";
 
 import { getSurveySummary } from "../controllers/survey.controller.js";
@@ -28,6 +29,13 @@ router.post(
 
 // Estate history
 router.get("/estate/:estateId", protect, getEstateSurveys);
+
+
+router.get(
+  "/:surveyId",
+  protect,
+  getSurveyById
+);
 
 // Download GeoJSON
 router.get("/:surveyId/geojson", protect, getSurveyGeoJson);

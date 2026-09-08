@@ -179,3 +179,23 @@ export const getSurveyMapData = async (req, res) => {
     });
   }
 };
+
+export const getSurveyById = async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+
+    const survey = await surveyService.getSurveyById(surveyId);
+
+    return res.status(200).json({
+      success: true,
+
+      data: survey,
+    });
+  } catch (error) {
+    return res.status(404).json({
+      success: false,
+
+      message: error.message,
+    });
+  }
+};

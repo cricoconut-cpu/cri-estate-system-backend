@@ -313,3 +313,16 @@ export const getSurveyMapData = async (surveyId) => {
     },
   };
 };
+
+export const getSurveyById = async (surveyId) => {
+  const survey = await Survey.findById(surveyId).populate(
+    "estate",
+    "name district area manager",
+  );
+
+  if (!survey) {
+    throw new Error("Survey not found.");
+  }
+
+  return survey;
+};
