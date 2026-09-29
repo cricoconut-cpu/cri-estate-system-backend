@@ -1,33 +1,53 @@
 import User from "../models/User.js";
 
+
 /*
 |--------------------------------------------------------------------------
 | Get All Users
 |--------------------------------------------------------------------------
 */
 
-export const getAllUsers = async (req, res) => {
+export const getAllUsers = async (
+  req,
+  res
+) => {
   try {
-    const users = await User.find()
-      .select("-password")
-      .populate("assignedEstate", "name estateCode")
-      .sort({
-        createdAt: -1,
-      });
+
+    const users =
+      await User.find()
+        .select("-password")
+        .populate(
+          "assignedEstate",
+          "name estateCode"
+        )
+        .sort({
+          createdAt: -1,
+        });
+
 
     return res.status(200).json({
+
       success: true,
 
       data: users,
+
     });
+
+
   } catch (error) {
+
     return res.status(500).json({
+
       success: false,
 
       message: error.message,
+
     });
+
   }
 };
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -35,9 +55,22 @@ export const getAllUsers = async (req, res) => {
 |--------------------------------------------------------------------------
 */
 
-export const createUser = async (req, res) => {
+export const createUser = async (
+  req,
+  res
+) => {
+
   try {
-    const { name, email, password, role, assignedEstate } = req.body;
+
+    const {
+      name,
+      email,
+      password,
+      role,
+      assignedEstate,
+    } = req.body;
+
+
 
     /*
     ------------------------------------------
@@ -45,13 +78,25 @@ export const createUser = async (req, res) => {
     ------------------------------------------
     */
 
-    if (!name || !email || !password || !role) {
-      return res.status(400).json({
-        success: false,
+    if (
+      !name ||
+      !email ||
+      !password ||
+      !role
+    ) {
 
-        message: "Name, email, password and role are required.",
+      return res.status(400).json({
+
+        success:false,
+
+        message:
+          "Name, email, password and role are required."
+
       });
+
     }
+
+
 
     /*
     ------------------------------------------
@@ -59,13 +104,23 @@ export const createUser = async (req, res) => {
     ------------------------------------------
     */
 
-    if (role === "Estate Manager" && !assignedEstate) {
-      return res.status(400).json({
-        success: false,
+    if (
+      role === "Estate Manager" &&
+      !assignedEstate
+    ) {
 
-        message: "Estate Manager must have an assigned estate.",
+      return res.status(400).json({
+
+        success:false,
+
+        message:
+          "Estate Manager must have an assigned estate."
+
       });
+
     }
+
+
 
     /*
     ------------------------------------------
@@ -73,17 +128,26 @@ export const createUser = async (req, res) => {
     ------------------------------------------
     */
 
-    const existingUser = await User.findOne({
-      email,
-    });
-
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-
-        message: "Email already exists.",
+    const existingUser =
+      await User.findOne({
+        email,
       });
+
+
+    if(existingUser){
+
+      return res.status(400).json({
+
+        success:false,
+
+        message:
+          "Email already exists."
+
+      });
+
     }
+
+
 
     /*
     ------------------------------------------
@@ -91,35 +155,56 @@ export const createUser = async (req, res) => {
     ------------------------------------------
     */
 
-    const user = await User.create({
-      name,
+    const user =
+      await User.create({
 
-      email,
+        name,
 
-      password,
+        email,
 
-      role,
+        password,
 
-      assignedEstate: role === "Estate Manager" ? assignedEstate : null,
-    });
+        role,
+
+        assignedEstate:
+          role === "Estate Manager"
+            ? assignedEstate
+            : null,
+
+      });
+
+
 
     return res.status(201).json({
-      success: true,
 
-      message: "User created successfully.",
+      success:true,
 
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      message:
+        "User created successfully.",
+
+      data:{
+        id:user._id,
+        name:user.name,
+        email:user.email,
+        role:user.role,
+      }
+
     });
-  } catch (error) {
+
+
+
+  } catch(error){
+
+
     return res.status(500).json({
-      success: false,
 
-      message: error.message,
+      success:false,
+
+      message:error.message,
+
     });
+
+
   }
+
 };
