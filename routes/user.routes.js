@@ -1,27 +1,41 @@
 import express from "express";
 
-import { createUser, getAllUsers } from "../controllers/user.controller.js";
+import {
+    createUser,
+    getAllUsers,
+    updateUser,
+    updateUserStatus,
+} from "../controllers/user.controller.js";
 
 import protect from "../middleware/auth.middleware.js";
-
 import authorize from "../middleware/role.middleware.js";
 
 const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| Get all users
+| All routes are Admin only
 |--------------------------------------------------------------------------
 */
 
 router.get("/", protect, authorize("Admin"), getAllUsers);
 
+router.post("/", protect, authorize("Admin"), createUser);
+
 /*
 |--------------------------------------------------------------------------
-| Create user
+| Activate / Deactivate User
 |--------------------------------------------------------------------------
 */
 
-router.post("/", protect, authorize("Admin"), createUser);
+router.patch("/:id/status", protect, authorize("Admin"), updateUserStatus);
+
+/*
+|--------------------------------------------------------------------------
+| Update User
+|--------------------------------------------------------------------------
+*/
+
+router.patch("/:id", protect, authorize("Admin"), updateUser);
 
 export default router;
