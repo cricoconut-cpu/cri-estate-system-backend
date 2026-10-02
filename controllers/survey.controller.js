@@ -1,6 +1,29 @@
+import Survey from "../models/Survey.js";
+
 import * as surveyService from "../services/survey.service.js";
 
-import Survey from "../models/Survey.js";
+/*
+|--------------------------------------------------------------------------
+| Error Helper
+|--------------------------------------------------------------------------
+*/
+
+const sendError = (res, error, fallbackStatus = 500) => {
+  return res.status(error.statusCode || fallbackStatus).json({
+    success: false,
+
+    message: error.message || "Something went wrong.",
+  });
+};
+
+/*
+|--------------------------------------------------------------------------
+| Survey Summary
+|--------------------------------------------------------------------------
+|
+| Route is Admin only.
+|
+*/
 
 export const getSurveySummary = async (req, res) => {
   try {
@@ -56,13 +79,15 @@ export const getSurveySummary = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error);
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Create / Replace Survey
+|--------------------------------------------------------------------------
+*/
 
 export const createSurvey = async (req, res) => {
   try {
@@ -74,13 +99,9 @@ export const createSurvey = async (req, res) => {
 
     const survey = await surveyService.createSurvey({
       estateId,
-
       year,
-
       surveyDate,
-
       files,
-
       uploadedBy,
     });
 
@@ -92,19 +113,25 @@ export const createSurvey = async (req, res) => {
       data: survey,
     });
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error, 400);
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Get Survey By Estate + Year
+|--------------------------------------------------------------------------
+*/
 
 export const getSurveyByEstateYear = async (req, res) => {
   try {
     const { estateId, year } = req.params;
 
-    const survey = await surveyService.getSurveyByEstateYear(estateId, year);
+    const survey = await surveyService.getSurveyByEstateYear(
+      estateId,
+      year,
+      req.user,
+    );
 
     return res.status(200).json({
       success: true,
@@ -112,19 +139,21 @@ export const getSurveyByEstateYear = async (req, res) => {
       data: survey,
     });
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error);
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Get Estate Survey History
+|--------------------------------------------------------------------------
+*/
 
 export const getEstateSurveys = async (req, res) => {
   try {
     const { estateId } = req.params;
 
-    const surveys = await surveyService.getEstateSurveys(estateId);
+    const surveys = await surveyService.getEstateSurveys(estateId, req.user);
 
     return res.status(200).json({
       success: true,
@@ -132,19 +161,21 @@ export const getEstateSurveys = async (req, res) => {
       data: surveys,
     });
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error);
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Get GeoJSON
+|--------------------------------------------------------------------------
+*/
 
 export const getSurveyGeoJson = async (req, res) => {
   try {
     const { surveyId } = req.params;
 
-    const geoJson = await surveyService.getSurveyGeoJson(surveyId);
+    const geoJson = await surveyService.getSurveyGeoJson(surveyId, req.user);
 
     return res.status(200).json({
       success: true,
@@ -152,19 +183,21 @@ export const getSurveyGeoJson = async (req, res) => {
       data: geoJson,
     });
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error);
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Get Map Data
+|--------------------------------------------------------------------------
+*/
 
 export const getSurveyMapData = async (req, res) => {
   try {
     const { surveyId } = req.params;
 
-    const mapData = await surveyService.getSurveyMapData(surveyId);
+    const mapData = await surveyService.getSurveyMapData(surveyId, req.user);
 
     return res.status(200).json({
       success: true,
@@ -172,19 +205,21 @@ export const getSurveyMapData = async (req, res) => {
       data: mapData,
     });
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error);
   }
 };
+
+/*
+|--------------------------------------------------------------------------
+| Get Survey By ID
+|--------------------------------------------------------------------------
+*/
 
 export const getSurveyById = async (req, res) => {
   try {
     const { surveyId } = req.params;
 
-    const survey = await surveyService.getSurveyById(surveyId);
+    const survey = await surveyService.getSurveyById(surveyId, req.user);
 
     return res.status(200).json({
       success: true,
@@ -192,10 +227,6 @@ export const getSurveyById = async (req, res) => {
       data: survey,
     });
   } catch (error) {
-    return res.status(404).json({
-      success: false,
-
-      message: error.message,
-    });
+    return sendError(res, error);
   }
 };

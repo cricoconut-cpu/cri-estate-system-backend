@@ -6,18 +6,29 @@ import {
   getSurveyByEstateYear,
   getSurveyById,
   getSurveyGeoJson,
-  getSurveyMapData
+  getSurveyMapData,
+  getSurveySummary,
 } from "../controllers/survey.controller.js";
 
-import { getSurveySummary } from "../controllers/survey.controller.js";
 import protect from "../middleware/auth.middleware.js";
+
 import authorize from "../middleware/role.middleware.js";
+
 import { surveyUpload } from "../middleware/upload.middleware.js";
+
 import { createSurveyValidation } from "../validators/survey.validator.js";
 
 const router = express.Router();
 
-// Upload survey
+/*
+|--------------------------------------------------------------------------
+| Upload Survey
+|--------------------------------------------------------------------------
+|
+| Admin + Analyst only
+|
+*/
+
 router.post(
   "/",
   protect,
@@ -27,26 +38,62 @@ router.post(
   createSurvey,
 );
 
-// Estate history
-router.get("/estate/:estateId", protect, getEstateSurveys);
+/*
+|--------------------------------------------------------------------------
+| Admin Survey Summary
+|--------------------------------------------------------------------------
+|
+| IMPORTANT:
+| This must appear before /:surveyId
+|
+*/
 
-
-router.get(
-  "/:surveyId",
-  protect,
-  getSurveyById
-);
-
-// Download GeoJSON
-router.get("/:surveyId/geojson", protect, getSurveyGeoJson);
-
-// Survey summary
 router.get("/summary", protect, authorize("Admin"), getSurveySummary);
 
-// Download Map Data
+/*
+|--------------------------------------------------------------------------
+| Estate Survey History
+|--------------------------------------------------------------------------
+*/
+
+router.get("/estate/:estateId", protect, getEstateSurveys);
+
+/*
+|--------------------------------------------------------------------------
+| Survey GeoJSON
+|--------------------------------------------------------------------------
+*/
+
+router.get("/:surveyId/geojson", protect, getSurveyGeoJson);
+
+/*
+|--------------------------------------------------------------------------
+| Survey Map
+|--------------------------------------------------------------------------
+*/
+
 router.get("/:surveyId/map", protect, getSurveyMapData);
 
-// Single survey
+/*
+|--------------------------------------------------------------------------
+| Survey By Estate + Year
+|--------------------------------------------------------------------------
+|
+| Keep this before /:surveyId.
+|
+*/
+
 router.get("/:estateId/:year", protect, getSurveyByEstateYear);
+
+/*
+|--------------------------------------------------------------------------
+| Survey By ID
+|--------------------------------------------------------------------------
+|
+| Generic route goes LAST.
+|
+*/
+
+router.get("/:surveyId", protect, getSurveyById);
 
 export default router;

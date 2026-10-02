@@ -1,4 +1,5 @@
 import Estate from "../models/Estate.js";
+
 import Survey from "../models/Survey.js";
 
 import {
@@ -9,9 +10,90 @@ import {
 
 import { calculateSurveyStatistics } from "../utils/geojson.parser.js";
 
-// =====================================================
-// CREATE / REPLACE SURVEY
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| Service Error Helper
+|--------------------------------------------------------------------------
+*/
+
+const serviceError = (message, statusCode) => {
+  const error = new Error(message);
+
+  error.statusCode = statusCode;
+
+  return error;
+};
+
+/*
+|--------------------------------------------------------------------------
+| Full Survey Access Roles
+|--------------------------------------------------------------------------
+*/
+
+const hasFullSurveyAccess = (user) => {
+  return user?.role === "Admin" || user?.role === "Analyst";
+};
+
+/*
+|--------------------------------------------------------------------------
+| Assigned Estate
+|--------------------------------------------------------------------------
+*/
+
+const getAssignedEstateId = (user) => {
+  if (!user?.assignedEstate) {
+    return null;
+  }
+
+  return String(user.assignedEstate?._id || user.assignedEstate);
+};
+
+/*
+|--------------------------------------------------------------------------
+| Assert Estate Access
+|--------------------------------------------------------------------------
+|
+| Admin:
+|   all estates
+|
+| Analyst:
+|   all estates
+|
+| Estate Manager:
+|   assigned estate only
+|
+*/
+
+const assertEstateAccess = (user, estateId) => {
+  if (hasFullSurveyAccess(user)) {
+    return;
+  }
+
+  if (user?.role !== "Estate Manager") {
+    throw serviceError("You are not authorized to access surveys.", 403);
+  }
+
+  const assignedEstateId = getAssignedEstateId(user);
+
+  if (!assignedEstateId) {
+    throw serviceError("No estate has been assigned to this account.", 403);
+  }
+
+  const requestedEstateId = String(estateId?._id || estateId);
+
+  if (assignedEstateId !== requestedEstateId) {
+    throw serviceError(
+      "You are not authorized to access surveys for this estate.",
+      403,
+    );
+  }
+};
+
+/*
+|--------------------------------------------------------------------------
+| CREATE / REPLACE SURVEY
+|--------------------------------------------------------------------------
+*/
 
 export const createSurvey = async ({
   estateId,
@@ -20,30 +102,50 @@ export const createSurvey = async ({
   files,
   uploadedBy,
 }) => {
-  // 1. Validate required files
+  /*
+    |--------------------------------------------------------------------------
+    | Required Files
+    |--------------------------------------------------------------------------
+    */
 
   if (!files?.geoJson || !files?.orthomosaic || !files?.bounds) {
-    throw new Error("GeoJSON, orthomosaic image and bounds file are required.");
+    throw serviceError(
+      "GeoJSON, orthomosaic image and bounds file are required.",
+      400,
+    );
   }
 
-  // 2. Check estate
+  /*
+    |--------------------------------------------------------------------------
+    | Estate
+    |--------------------------------------------------------------------------
+    */
 
   const estate = await Estate.findById(estateId);
 
   if (!estate) {
-    throw new Error("Estate not found.");
+    throw serviceError("Estate not found.", 404);
   }
 
-  // 3. Find existing survey
-  //    Same estate + same year = replacement
+  /*
+    |--------------------------------------------------------------------------
+    | Existing Survey
+    |--------------------------------------------------------------------------
+    |
+    | Same estate + year = replacement
+    |
+    */
 
   const existingSurvey = await Survey.findOne({
     estate: estateId,
     year,
   });
 
-  // 4. Save old file paths
-  //    BEFORE replacing the MongoDB document
+  /*
+    |--------------------------------------------------------------------------
+    | Save Old File Paths
+    |--------------------------------------------------------------------------
+    */
 
   const oldFiles = existingSurvey
     ? {
@@ -55,7 +157,11 @@ export const createSurvey = async ({
       }
     : null;
 
-  // 5. Create unique upload version
+  /*
+    |--------------------------------------------------------------------------
+    | New Storage Paths
+    |--------------------------------------------------------------------------
+    */
 
   const uploadVersion = Date.now();
 
@@ -70,9 +176,11 @@ export const createSurvey = async ({
   let uploadedFiles = null;
 
   try {
-    // =================================================
-    // 6. Upload new files to Supabase
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Upload Files
+      |--------------------------------------------------------------------------
+      */
 
     const geoJsonFile = await uploadFile(files.geoJson[0], geoJsonPath);
 
@@ -90,23 +198,41 @@ export const createSurvey = async ({
       bounds: boundsFile,
     };
 
-    // =================================================
-    // 7. Parse GeoJSON
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Parse GeoJSON
+      |--------------------------------------------------------------------------
+      */
 
-    const geoJson = JSON.parse(files.geoJson[0].buffer.toString("utf-8"));
+    let geoJson;
+
+    try {
+      geoJson = JSON.parse(files.geoJson[0].buffer.toString("utf-8"));
+    } catch {
+      throw serviceError("Invalid GeoJSON file.", 400);
+    }
 
     const statistics = calculateSurveyStatistics(geoJson);
 
-    // =================================================
-    // 8. Parse bounds JSON
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Parse Bounds
+      |--------------------------------------------------------------------------
+      */
 
-    const spatialData = JSON.parse(files.bounds[0].buffer.toString("utf-8"));
+    let spatialData;
 
-    // =================================================
-    // 9. Validate bounds JSON
-    // =================================================
+    try {
+      spatialData = JSON.parse(files.bounds[0].buffer.toString("utf-8"));
+    } catch {
+      throw serviceError("Invalid bounds JSON file.", 400);
+    }
+
+    /*
+      |--------------------------------------------------------------------------
+      | Validate Bounds
+      |--------------------------------------------------------------------------
+      */
 
     if (
       !spatialData.crs ||
@@ -116,12 +242,14 @@ export const createSurvey = async ({
       typeof spatialData.bounds.east !== "number" ||
       typeof spatialData.bounds.west !== "number"
     ) {
-      throw new Error("Invalid bounds JSON format.");
+      throw serviceError("Invalid bounds JSON format.", 400);
     }
 
-    // =================================================
-    // 10. Prepare Survey document
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Survey Document
+      |--------------------------------------------------------------------------
+      */
 
     const surveyData = {
       estate: estateId,
@@ -171,9 +299,11 @@ export const createSurvey = async ({
       status: "completed",
     };
 
-    // =================================================
-    // 11. Create new OR replace existing survey
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Save / Replace
+      |--------------------------------------------------------------------------
+      */
 
     let savedSurvey;
 
@@ -185,10 +315,11 @@ export const createSurvey = async ({
       savedSurvey = await Survey.create(surveyData);
     }
 
-    // =================================================
-    // 12. Delete OLD files
-    //     only after successful DB save
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Delete Previous Files
+      |--------------------------------------------------------------------------
+      */
 
     if (oldFiles) {
       if (oldFiles.geoJson) {
@@ -206,9 +337,11 @@ export const createSurvey = async ({
 
     return savedSurvey;
   } catch (error) {
-    // =================================================
-    // 13. Cleanup NEW files if something failed
-    // =================================================
+    /*
+      |--------------------------------------------------------------------------
+      | Cleanup Newly Uploaded Files
+      |--------------------------------------------------------------------------
+      */
 
     if (uploadedFiles) {
       if (uploadedFiles.geoJson?.path) {
@@ -228,11 +361,19 @@ export const createSurvey = async ({
   }
 };
 
-// =====================================================
-// GET SURVEY BY ESTATE + YEAR
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| GET SURVEY BY ESTATE + YEAR
+|--------------------------------------------------------------------------
+*/
 
-export const getSurveyByEstateYear = async (estateId, year) => {
+export const getSurveyByEstateYear = async (estateId, year, user) => {
+  /*
+   * Check permission first.
+   */
+
+  assertEstateAccess(user, estateId);
+
   const survey = await Survey.findOne({
     estate: estateId,
     year,
@@ -241,17 +382,26 @@ export const getSurveyByEstateYear = async (estateId, year) => {
     .populate("uploadedBy", "name email role");
 
   if (!survey) {
-    throw new Error("Survey not found.");
+    throw serviceError("Survey not found.", 404);
   }
 
   return survey;
 };
 
-// =====================================================
-// GET ALL SURVEYS OF ESTATE
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| GET ALL SURVEYS OF ESTATE
+|--------------------------------------------------------------------------
+*/
 
-export const getEstateSurveys = async (estateId) => {
+export const getEstateSurveys = async (estateId, user) => {
+  /*
+   * Estate Manager cannot request
+   * another estate's history.
+   */
+
+  assertEstateAccess(user, estateId);
+
   const surveys = await Survey.find({
     estate: estateId,
   })
@@ -261,44 +411,65 @@ export const getEstateSurveys = async (estateId) => {
     })
     .select("year surveyDate statistics status createdAt");
 
-  if (!surveys.length) {
-    throw new Error("No surveys found for this estate.");
-  }
+  /*
+   * An estate having zero surveys
+   * is valid, not an API error.
+   */
 
   return surveys;
 };
 
-// =====================================================
-// GET SURVEY GEOJSON
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| GET SURVEY GEOJSON
+|--------------------------------------------------------------------------
+*/
 
-export const getSurveyGeoJson = async (surveyId) => {
-  const survey = await Survey.findById(surveyId);
+export const getSurveyGeoJson = async (surveyId, user) => {
+  const survey = await Survey.findById(surveyId).select("estate files.geoJson");
 
   if (!survey) {
-    throw new Error("Survey not found.");
+    throw serviceError("Survey not found.", 404);
   }
+
+  /*
+   * Critical authorization check.
+   */
+
+  assertEstateAccess(user, survey.estate);
 
   const geoJsonPath = survey.files?.geoJson?.path;
 
   if (!geoJsonPath) {
-    throw new Error("GeoJSON file path not found.");
+    throw serviceError("GeoJSON file path not found.", 404);
   }
 
-  const geoJson = await downloadFile(geoJsonPath);
-
-  return geoJson;
+  return downloadFile(geoJsonPath);
 };
 
-// =====================================================
-// GET SURVEY MAP DATA
-// =====================================================
+/*
+|--------------------------------------------------------------------------
+| GET SURVEY MAP DATA
+|--------------------------------------------------------------------------
+*/
 
-export const getSurveyMapData = async (surveyId) => {
-  const survey = await Survey.findById(surveyId);
+export const getSurveyMapData = async (surveyId, user) => {
+  const survey = await Survey.findById(surveyId).select(
+    "estate files.orthomosaic spatial",
+  );
 
   if (!survey) {
-    throw new Error("Survey not found.");
+    throw serviceError("Survey not found.", 404);
+  }
+
+  /*
+   * Critical authorization check.
+   */
+
+  assertEstateAccess(user, survey.estate);
+
+  if (!survey.files?.orthomosaic?.imageUrl) {
+    throw serviceError("Orthomosaic image not found.", 404);
   }
 
   return {
@@ -314,15 +485,28 @@ export const getSurveyMapData = async (surveyId) => {
   };
 };
 
-export const getSurveyById = async (surveyId) => {
+/*
+|--------------------------------------------------------------------------
+| GET SURVEY BY ID
+|--------------------------------------------------------------------------
+*/
+
+export const getSurveyById = async (surveyId, user) => {
   const survey = await Survey.findById(surveyId).populate(
     "estate",
     "name district area manager",
   );
 
   if (!survey) {
-    throw new Error("Survey not found.");
+    throw serviceError("Survey not found.", 404);
   }
+
+  /*
+   * survey.estate is populated,
+   * so helper supports estate._id.
+   */
+
+  assertEstateAccess(user, survey.estate);
 
   return survey;
 };
